@@ -108,7 +108,7 @@ func ProcessSource(roots []string) (*SourceInfo, *revel.Error) {
 
 			// Get the import path of the package.
 			pkgImportPath := rootImportPath
-			if root != path {
+			if filepath.Clean(root) != filepath.Clean(path) {
 				pkgImportPath = rootImportPath + "/" + filepath.ToSlash(path[len(root)+1:])
 			}
 
