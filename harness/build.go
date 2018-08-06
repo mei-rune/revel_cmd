@@ -19,10 +19,10 @@ import (
 	"time"
 
 	"github.com/revel/cmd/model"
-	_ "github.com/revel/cmd/parser"
-	"github.com/revel/cmd/utils"
-	"github.com/revel/cmd/parser2"
 	"github.com/revel/cmd/parser"
+	_ "github.com/revel/cmd/parser"
+	"github.com/revel/cmd/parser2"
+	"github.com/revel/cmd/utils"
 )
 
 var importErrorPattern = regexp.MustCompile("cannot find package \"([^\"]+)\"")
@@ -188,7 +188,7 @@ func Build(c *model.CommandConfig, paths *model.RevelContainer) (_ *App, err err
 			}
 
 			buildCmd.Env = append(os.Environ(),
-				"GOPATH=" + gopath,
+				"GOPATH="+gopath,
 			)
 		}
 		utils.CmdInit(buildCmd, !c.Vendored, c.AppPath)
@@ -256,7 +256,7 @@ func getAppVersion(paths *model.RevelContainer) string {
 		if (err != nil && os.IsNotExist(err)) || !info.IsDir() {
 			return ""
 		}
-		gitCmd := exec.Command(gitPath, "--git-dir=" + gitDir, "--work-tree=" + paths.BasePath, "describe", "--always", "--dirty")
+		gitCmd := exec.Command(gitPath, "--git-dir="+gitDir, "--work-tree="+paths.BasePath, "describe", "--always", "--dirty")
 		utils.Logger.Info("Exec:", "args", gitCmd.Args)
 		output, err := gitCmd.Output()
 
@@ -421,13 +421,12 @@ func newCompileError(paths *model.RevelContainer, output []byte) *utils.SourceEr
 		return newPath
 	}
 
-
 	// Read the source for the offending file.
 	var (
-		relFilename = string(errorMatch[1]) // e.g. "src/revel/sample/app/controllers/app.go"
-		absFilename = findInPaths(relFilename)
-		line, _ = strconv.Atoi(string(errorMatch[2]))
-		description = string(errorMatch[4])
+		relFilename  = string(errorMatch[1]) // e.g. "src/revel/sample/app/controllers/app.go"
+		absFilename  = findInPaths(relFilename)
+		line, _      = strconv.Atoi(string(errorMatch[2]))
+		description  = string(errorMatch[4])
 		compileError = &utils.SourceError{
 			SourceType:  "Go code",
 			Title:       "Go Compilation Error",
@@ -446,7 +445,7 @@ func newCompileError(paths *model.RevelContainer, output []byte) *utils.SourceEr
 	fileStr, err := utils.ReadLines(absFilename)
 	if err != nil {
 		compileError.MetaError = absFilename + ": " + err.Error()
-		utils.Logger.Info("Unable to readlines " + compileError.MetaError, "error", err)
+		utils.Logger.Info("Unable to readlines "+compileError.MetaError, "error", err)
 		return compileError
 	}
 
