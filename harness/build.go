@@ -39,7 +39,7 @@ func Build(buildFlags ...string) (app *App, compileError *revel.Error) {
 
 	// Add the db.import to the import paths.
 	if dbImportPath, found := revel.Config.String("db.import"); found {
-		sourceInfo.InitImportPaths = append(sourceInfo.InitImportPaths, strings.Split(dbImportPath,",")...)
+		sourceInfo.InitImportPaths = append(sourceInfo.InitImportPaths, strings.Split(dbImportPath, ",")...)
 	}
 
 	// Generate two source files.
@@ -66,6 +66,10 @@ func Build(buildFlags ...string) (app *App, compileError *revel.Error) {
 	useVendor := revel.DirExists(filepath.Join(revel.BasePath, "vendor"))
 	basePath := revel.BasePath
 	for !useVendor {
+		if basePath == filepath.Dir(basePath) {
+			break
+		}
+
 		basePath = filepath.Dir(basePath)
 		found := false
 		// Check to see if we are still in the GOPATH
