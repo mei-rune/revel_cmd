@@ -92,6 +92,10 @@ func Build(c *model.CommandConfig, paths *model.RevelContainer) (_ *App, err err
 	useVendor := utils.DirExists(filepath.Join(paths.BasePath, "vendor"))
 	basePath := paths.BasePath
 	for !useVendor {
+		if basePath == filepath.Dir(basePath) {
+			break
+		}
+
 		basePath = filepath.Dir(basePath)
 		found := false
 		// Check to see if we are still in the GOPATH
@@ -400,7 +404,7 @@ func newCompileError(paths *model.RevelContainer, output []byte) *utils.Error {
 		// Extract the paths from the gopaths, and search for file there first
 		gopaths := filepath.SplitList(build.Default.GOPATH)
 		for _, gp := range gopaths {
-			newPath := filepath.Join(gp,"src", paths.ImportPath, relFilename)
+			newPath := filepath.Join(gp, "src", paths.ImportPath, relFilename)
 			println(newPath)
 			if utils.Exists(newPath) {
 				return newPath
@@ -410,7 +414,6 @@ func newCompileError(paths *model.RevelContainer, output []byte) *utils.Error {
 		utils.Logger.Warn("Could not find in GO path", "file", relFilename)
 		return newPath
 	}
-
 
 	// Read the source for the offending file.
 	var (
