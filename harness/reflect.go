@@ -8,6 +8,7 @@ package harness
 // It catalogs the controllers, their methods, and their arguments.
 
 import (
+	"fmt"
 	"go/ast"
 	"go/build"
 	"go/parser"
@@ -15,6 +16,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"unicode"
@@ -789,12 +791,12 @@ func NewTypeExpr(pkgName string, expr ast.Expr) TypeExpr {
 			return TypeExpr{"map[" + identKey.Name + "]" + e.Expr, e.PkgName, e.pkgIndex + len("map["+identKey.Name+"]"), e.Valid}
 		}
 
-		revel.RevelLog.Error("Failed to generate name for field. Make sure the field name is valid.")
+		revel.RevelLog.Error("Failed to generate name for field. Make sure the field name is valid - " + pkgName + "." + fmt.Sprint(expr) + strconv.Itoa(int(expr.Pos())) + strconv.Itoa(int(expr.End())))
 	case *ast.Ellipsis:
 		e := NewTypeExpr(pkgName, t.Elt)
 		return TypeExpr{"[]" + e.Expr, e.PkgName, e.pkgIndex + 2, e.Valid}
 	default:
-		revel.RevelLog.Error("Failed to generate name for field. Make sure the field name is valid.")
+		revel.RevelLog.Error("Failed to generate name for field. Make sure the field name is valid - " + pkgName + "." + fmt.Sprint(expr) + strconv.Itoa(int(expr.Pos())) + strconv.Itoa(int(expr.End())))
 	}
 	return TypeExpr{Valid: false}
 }
