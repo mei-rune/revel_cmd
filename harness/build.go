@@ -475,7 +475,12 @@ func main() {
 const RevelRoutesTemplate = `// GENERATED CODE - DO NOT EDIT
 package routes
 
-import "github.com/revel/revel"
+import (
+	"net/url"
+	"strings"
+
+	"github.com/revel/revel"
+)
 
 {{range $i, $c := .Controllers}}
 type t{{.StructName}} struct {}
@@ -484,18 +489,24 @@ var {{.StructName}} t{{.StructName}}
 {{range .MethodSpecs}}
 func (_ t{{$c.StructName}}) {{.Name}}({{range .Args}}
 		{{.Name}} {{if .ImportPath}}interface{}{{else}}{{.TypeExpr.TypeName ""}}{{end}},{{end}}
-		, params ...map[string]string) string {
+		urlRevelParams ...map[string]string) string {
 	args := make(map[string]string)
 	{{range .Args}}
 	revel.Unbind(args, "{{.Name}}", {{.Name}}){{end}}
 
 	s := revel.MainRouter.Reverse("{{$c.StructName}}.{{.Name}}", args).URL
-	if len(params) == 0 {
-		return s	
+	if len(urlRevelParams) == 0 {
+		return s
 	}
+	return urljoin(s, urlRevelParams)
+}
+{{end}}
+{{end}}
+
+func urljoin(s string, urlRevelParams []map[string]string) string {
 	hasQuest := strings.Contains(s, "?")
-	for idx := range params {
-		for key, value := range params[idx] {
+	for idx := range urlRevelParams {
+		for key, value := range urlRevelParams[idx] {
 			if hasQuest {
 				s = s + "&" + key + "=" + url.QueryEscape(value)
 			} else {
@@ -504,8 +515,6 @@ func (_ t{{$c.StructName}}) {{.Name}}({{range .Args}}
 			}
 		}
 	}
-	return s 
+	return s
 }
-{{end}}
-{{end}}
 `
