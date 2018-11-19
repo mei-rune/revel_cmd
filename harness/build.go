@@ -544,11 +544,27 @@ var {{.StructName}} t{{.StructName}}
 {{range .MethodSpecs}}
 func (_ t{{$c.StructName}}) {{.Name}}({{range .Args}}
 		{{.Name}} {{if .ImportPath}}interface{}{{else}}{{.TypeExpr.TypeName ""}}{{end}},{{end}}
-		) revel.ActionURL {
+		, params ...map[string]string) string {
 	args := make(map[string]string)
 	{{range .Args}}
 	revel.Unbind(args, "{{.Name}}", {{.Name}}){{end}}
-	return revel.ActionURL(revel.MainRouter.Reverse("{{$c.StructName}}.{{.Name}}", args).URL)
+
+	s := revel.MainRouter.Reverse("{{$c.StructName}}.{{.Name}}", args).URL
+	if len(params) == 0 {
+		return s	
+	}
+	hasQuest := strings.Contains(s, "?")
+	for idx := range params {
+		for key, value := range params[idx] {
+			if hasQuest {
+				s = s + "&" + key + "=" + url.QueryEscape(value)
+			} else {
+				s = s + "?" + key + "=" + url.QueryEscape(value)
+				hasQuest = true
+			}
+		}
+	}
+	return s 
 }
 {{end}}
 {{end}}
