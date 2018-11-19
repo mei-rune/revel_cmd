@@ -484,11 +484,11 @@ var {{.StructName}} t{{.StructName}}
 {{range .MethodSpecs}}
 func (_ t{{$c.StructName}}) {{.Name}}({{range .Args}}
 		{{.Name}} {{if .ImportPath}}interface{}{{else}}{{.TypeExpr.TypeName ""}}{{end}},{{end}}
-		) string {
+		) revel.ActionURL {
 	args := make(map[string]string)
 	{{range .Args}}
 	revel.Unbind(args, "{{.Name}}", {{.Name}}){{end}}
-	return revel.MainRouter.Reverse("{{$c.StructName}}.{{.Name}}", args).URL
+	return revel.ActionURL(revel.MainRouter.Reverse("{{$c.StructName}}.{{.Name}}", args).URL)
 }
 {{end}}
 {{end}}
