@@ -1,6 +1,5 @@
 module github.com/revel/cmd
 
-<<<<<<< HEAD
 go 1.12
 
 require (
@@ -14,9 +13,9 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/revel/config v0.21.0
 	github.com/revel/log15 v2.11.20+incompatible
-	github.com/revel/modules v0.21.0 // indirect
+	github.com/revel/modules v0.21.0
 	github.com/revel/pathtree v0.0.0-20140121041023-41257a1839e9 // indirect
-	github.com/revel/revel v0.21.0
+	github.com/revel/revel v0.18.2
 	github.com/stretchr/testify v1.4.0
 	github.com/twinj/uuid v1.0.0 // indirect
 	github.com/xeonx/timeago v1.0.0-rc4 // indirect
@@ -30,5 +29,4 @@ require (
 	gopkg.in/stretchr/testify.v1 v1.2.2 // indirect
 )
 
-
-replace github.com/revel/revel => github.com/runner-mei/revel v0.18.1
+replace github.com/revel/revel => github.com/runner-mei/revel v0.18.2
