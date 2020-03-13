@@ -1,5 +1,6 @@
 module github.com/revel/cmd
 
+<<<<<<< HEAD
 go 1.12
 
 require (
@@ -28,3 +29,6 @@ require (
 	gopkg.in/stack.v0 v0.0.0-20141108040640-9b43fcefddd0
 	gopkg.in/stretchr/testify.v1 v1.2.2 // indirect
 )
+
+
+replace github.com/revel/revel => github.com/runner-mei/revel v0.18.1
