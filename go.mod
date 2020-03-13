@@ -1,7 +1,5 @@
 module github.com/revel/cmd
 
-go 1.13
-
 require (
 	github.com/agtorre/gocolorize v1.0.0
 	github.com/revel/modules v0.21.0
