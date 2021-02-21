@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"fmt"
+
 	"github.com/revel/cmd/harness"
 	"github.com/revel/cmd/model"
 	"github.com/revel/cmd/utils"
@@ -60,6 +61,9 @@ func updateBuildConfig(c *model.CommandConfig, args []string) bool {
 // The main entry point to build application from command line
 func buildApp(c *model.CommandConfig) (err error) {
 
+	if c.AppPath == "" {
+		panic("ddd")
+	}
 	appImportPath, destPath, mode := c.ImportPath, c.Build.TargetPath, DefaultRunMode
 	if len(c.Build.Mode) > 0 {
 		mode = c.Build.Mode

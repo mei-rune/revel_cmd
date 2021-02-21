@@ -2,8 +2,6 @@ package model
 
 import (
 	"fmt"
-	"github.com/revel/cmd"
-	"github.com/revel/cmd/utils"
 	"go/ast"
 	"go/build"
 	"go/parser"
@@ -13,7 +11,11 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/revel/cmd"
 	"github.com/revel/cmd/model/command"
+	"github.com/revel/cmd/utils"
+	"golang.org/x/mod/modfile"
 )
 
 // The constants
@@ -33,29 +35,29 @@ type (
 
 	// The Command config for the line input
 	CommandConfig struct {
-		Index             COMMAND                                                                                                                     // The index
-		Verbose           []bool `short:"v" long:"debug" description:"If set the logger is set to verbose"`                                           // True if debug is active
-		FrameworkVersion  *Version                                                                                                                    // The framework version
-		CommandVersion    *Version                                                                                                                    // The command version
-		HistoricMode      bool     `long:"historic-run-mode" description:"If set the runmode is passed a string not json"`                            // True if debug is active
-		ImportPath        string                                                                                                                      // The import path (relative to a GOPATH)
-		GoPath            string                                                                                                                      // The GoPath
-		GoCmd             string                                                                                                                      // The full path to the go executable
-	                                                                                                                                                //SrcRoot           string                                                                                                                      // The source root
-		AppPath           string                                                                                                                      // The application path (absolute)
-		AppName           string                                                                                                                      // The application name
-		HistoricBuildMode bool     `long:"historic-build-mode" description:"If set the code is scanned using the original parsers, not the go.1.11+"` // True if debug is active
-		Vendored          bool                                                                                                                        // True if the application is vendored
-		PackageResolver   func(pkgName string) error                                                                                                  //  a package resolver for the config
+		Index            COMMAND  // The index
+		Verbose          []bool   `short:"v" long:"debug" description:"If set the logger is set to verbose"` // True if debug is active
+		FrameworkVersion *Version // The framework version
+		CommandVersion   *Version // The command version
+		HistoricMode     bool     `long:"historic-run-mode" description:"If set the runmode is passed a string not json"` // True if debug is active
+		ImportPath       string   // The import path (relative to a GOPATH)
+		// GoPath           string   // The GoPath
+		GoCmd string // The full path to the go executable
+		//SrcRoot           string                                                                                                                      // The source root
+		AppPath           string                     // The application path (absolute)
+		AppName           string                     // The application name
+		HistoricBuildMode bool                       `long:"historic-build-mode" description:"If set the code is scanned using the original parsers, not the go.1.11+"` // True if debug is active
+		Vendored          bool                       // True if the application is vendored
+		PackageResolver   func(pkgName string) error //  a package resolver for the config
 		BuildFlags        []string                   `short:"X" long:"build-flags" description:"These flags will be used when building the application. May be specified multiple times, only applicable for Build, Run, Package, Test commands"`
-		GoModFlags        []string            `long:"gomod-flags" description:"These flags will execute go mod commands for each flag, this happens during the build process"`
-		New               command.New `command:"new"`
-		Build             command.Build `command:"build"`
-		Run               command.Run `command:"run"`
-		Package           command.Package `command:"package"`
-		Clean             command.Clean `command:"clean"`
-		Test              command.Test `command:"test"`
-		Version           command.Version `command:"version"`
+		GoModFlags        []string                   `long:"gomod-flags" description:"These flags will execute go mod commands for each flag, this happens during the build process"`
+		New               command.New                `command:"new"`
+		Build             command.Build              `command:"build"`
+		Run               command.Run                `command:"run"`
+		Package           command.Package            `command:"package"`
+		Clean             command.Clean              `command:"clean"`
+		Test              command.Test               `command:"test"`
+		Version           command.Version            `command:"version"`
 	}
 )
 
@@ -102,8 +104,8 @@ func (c *CommandConfig) UpdateImportPath() error {
 		if err == nil {
 			for _, path := range strings.Split(build.Default.GOPATH, string(filepath.ListSeparator)) {
 				utils.Logger.Infof("Checking import path %s with %s", currentPath, path)
-				if strings.HasPrefix(currentPath, path) && len(currentPath) > len(path) + 1 {
-					importPath = currentPath[len(path) + 1:]
+				if strings.HasPrefix(currentPath, path) && len(currentPath) > len(path)+1 {
+					importPath = currentPath[len(path)+1:]
 					// Remove the source from the path if it is there
 					if len(importPath) > 4 && (strings.ToLower(importPath[0:4]) == "src/" || strings.ToLower(importPath[0:4]) == "src\\") {
 						importPath = importPath[4:]
@@ -151,78 +153,64 @@ func (c *CommandConfig) initAppFolder() (err error) {
 		utils.Logger.Fatal("Go executable not found in PATH.")
 	}
 
-	// First try to determine where the application is located - this should be the import value
-	appFolder := c.ImportPath
 	wd, err := os.Getwd()
-	if len(appFolder) == 0 {
-		// We will assume the working directory is the appFolder
-		appFolder = wd
-	} else if strings.LastIndex(wd, appFolder) == len(wd) - len(appFolder) {
-		// Check for existence of an /app folder
-		if utils.Exists(filepath.Join(wd, "app")) {
-			appFolder = wd
-		} else {
-			appFolder = filepath.Join(wd, appFolder)
-		}
-	} else if strings.Contains(appFolder, ".") {
-		appFolder = filepath.Join(wd, filepath.Base(c.ImportPath))
-	} else if !filepath.IsAbs(appFolder) {
-		appFolder = filepath.Join(wd, appFolder)
-	}
 
-	utils.Logger.Info("Determined app folder to be", "appfolder", appFolder, "working", wd, "importPath", c.ImportPath)
-
-	// Use app folder to read the go.mod if it exists and extract the package information
-	goModFile := filepath.Join(appFolder, "go.mod")
-	utils.Logger.Info("Checking gomod, extracting from file", "path", goModFile,"exists", utils.Exists(goModFile))
-	if utils.Exists(goModFile) {
-		c.Vendored = true
-		utils.Logger.Info("Found go mod, extracting from file", "path", goModFile)
-		file, err := ioutil.ReadFile(goModFile)
+	modpath := GetModPath()
+	if modpath != "" {
+		bs, err := ioutil.ReadFile(filepath.Join(modpath, "go.mod"))
 		if err != nil {
-			return err
-		}
-		for _, line := range strings.Split(string(file), "\n") {
-			if strings.Index(line, "module ") == 0 {
-				c.ImportPath = strings.TrimSpace(strings.Split(line, "module")[1])
-				c.AppPath = appFolder
-				//c.SrcRoot = appFolder
-				utils.Logger.Info("Set application path and package based on go mod", "path", c.AppPath)
-				return nil
-			}
-		}
-		// c.SrcRoot = appFolder
-		c.AppPath = appFolder
-	} else if c.Index != NEW || (c.Index == NEW && c.New.NotVendored) {
-		workingDir, _ := os.Getwd()
-		goPathList := filepath.SplitList(c.GoPath)
-		bestpath := ""
-		for _, path := range goPathList {
-			if c.Index == NEW {
-				// If the GOPATH is part of the working dir this is the most likely target
-				if strings.HasPrefix(workingDir, path) {
-					bestpath = path
-				}
-			} else {
-				if utils.Exists(filepath.Join(path, "src", c.ImportPath)) {
-					bestpath = path
-					break
-				}
-			}
+			utils.Logger.Fatal("Failed to read mod file:", "error", err)
 		}
 
-		utils.Logger.Info("Source root", "cwd", workingDir, "gopath", c.GoPath, "c.ImportPath", c.ImportPath, "bestpath", bestpath)
-		if len(bestpath) > 0 {
-			c.AppPath = filepath.Join(bestpath, "src", c.ImportPath)
+		pkgPath := modfile.ModulePath(bs)
+		if c.ImportPath == pkgPath {
+			c.AppPath = modpath
+			utils.Logger.Info("Set application path and package based on go mod", "path", c.AppPath)
+			return nil
 		}
-		// Recalculate the appFolder because we are using a GOPATH
 
-	} else {
-		// This is new and not vendored, so the app path is the appFolder
-		c.AppPath = appFolder
+		if !strings.HasPrefix(c.ImportPath, pkgPath+"/") {
+			utils.Logger.Fatal("Please run the command in the app path.")
+			return nil
+		}
+
+		relatePath := strings.TrimPrefix(c.ImportPath, pkgPath+"/")
+		c.AppPath = filepath.Join(modpath, filepath.FromSlash(relatePath))
+		utils.Logger.Info("Set application path and package based on go mod", "path", c.AppPath)
+		return nil
 	}
 
-	utils.Logger.Info("Set application path", "path", c.AppPath, "vendored",c.Vendored, "importpath",c.ImportPath)
+	goenvpath := os.Getenv("GOPATH")
+	goPathList := filepath.SplitList(goenvpath)
+	bestpath := ""
+	for _, path := range goPathList {
+		if c.Index == NEW {
+			// If the GOPATH is part of the working dir this is the most likely target
+			if strings.HasPrefix(wd, path) {
+				bestpath = path
+			}
+		} else if utils.Exists(filepath.Join(path, "src", c.ImportPath)) {
+			c.AppPath = filepath.Join(bestpath, "src", c.ImportPath)
+			utils.Logger.Info("Set application path and package based on go mod", "path", c.AppPath)
+			return nil
+		}
+	}
+	if bestpath != "" {
+		c.AppPath = bestpath
+		utils.Logger.Info("Set application path and package based on go mod", "path", c.AppPath)
+		return nil
+	}
+
+	if filepath.IsAbs(c.ImportPath) {
+		c.AppPath = c.ImportPath
+	} else if c.Index == NEW {
+		// This is new and not vendored, so the app path is the appFolder
+		c.AppPath = filepath.Join(wd, c.ImportPath)
+	} else {
+		utils.Logger.Fatal("Please set gopaths or .")
+		return nil
+	}
+	utils.Logger.Info("Set application path", "path", c.AppPath, "vendored", c.Vendored, "importpath", c.ImportPath)
 	return nil
 }
 
@@ -269,15 +257,14 @@ func (c *CommandConfig) initGoPaths() {
 		return
 	}
 
-	// lookup go path
-	c.GoPath = build.Default.GOPATH
-	if c.GoPath == "" {
-		utils.Logger.Fatal("Abort: GOPATH environment variable is not set. " +
-			"Please refer to http://golang.org/doc/code.html to configure your Go environment.")
-	}
+	// // lookup go path
+	// c.GoPath = build.Default.GOPATH
+	// if c.GoPath == "" {
+	// 	utils.Logger.Fatal("Abort: GOPATH environment variable is not set. " +
+	// 		"Please refer to http://golang.org/doc/code.html to configure your Go environment.")
+	// }
 	return
 	//todo determine if the rest needs to happen
-
 
 	// revel/revel#1004 choose go path relative to current working directory
 
@@ -303,7 +290,7 @@ func (c *CommandConfig) initGoPaths() {
 		c.AppPath = filepath.Join(c.SrcRoot, filepath.FromSlash(c.ImportPath))
 		utils.Logger.Info("Set application path", "path", c.AppPath)
 
-	 */
+	*/
 
 }
 
@@ -350,4 +337,22 @@ func (c *CommandConfig) SetVersions() (err error) {
 		}
 	}
 	return
+}
+
+func GetModPath() string {
+	wd, err := os.Getwd()
+	if err != nil {
+		return ""
+	}
+	for {
+		gomod := filepath.Join(wd, "go.mod")
+		if _, err := os.Stat(gomod); err == nil {
+			return wd
+		}
+		parent := filepath.Dir(wd)
+		if len(parent) >= len(wd) {
+			return ""
+		}
+		wd = parent
+	}
 }

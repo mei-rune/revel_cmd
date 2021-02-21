@@ -182,16 +182,19 @@ func Build(c *model.CommandConfig, paths *model.RevelContainer) (_ *App, err err
 		buildCmd := exec.Command(goPath, flags...)
 		if !c.Vendored {
 			// This is Go main path
-			gopath := c.GoPath
-			for _, o := range paths.ModulePathMap {
-				gopath += string(filepath.ListSeparator) + o.Path
-			}
+			// gopath := c.GoPath
+			// for _, o := range paths.ModulePathMap {
+			// 	gopath += string(filepath.ListSeparator) + o.Path
+			// }
 
-			buildCmd.Env = append(os.Environ(),
-				"GOPATH="+gopath,
-			)
+			// buildCmd.Env = append(os.Environ(),
+			// 	"GOPATH="+gopath,
+			// )
 		}
 		utils.CmdInit(buildCmd, !c.Vendored, c.AppPath)
+
+		fmt.Println("=====", buildCmd.Path)
+		fmt.Println("=====", buildCmd.Args)
 
 		utils.Logger.Info("Exec:", "args", buildCmd.Args, "working dir", buildCmd.Dir)
 		output, err := buildCmd.CombinedOutput()
@@ -393,6 +396,7 @@ func newCompileError(paths *model.RevelContainer, output []byte) *utils.SourceEr
 		errorMatch = regexp.MustCompile(`(?m)^(.*?):(\d+):\s(.*?)$`).FindSubmatch(output)
 
 		if errorMatch == nil {
+			panic(string(output))
 			utils.Logger.Error("Failed to parse build errors", "error", string(output))
 			return &utils.SourceError{
 				SourceType:  "Go code",

@@ -18,6 +18,7 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/twinj/uuid v1.0.0 // indirect
 	github.com/xeonx/timeago v1.0.0-rc4 // indirect
+	golang.org/x/mod v0.4.1
 	golang.org/x/net v0.0.0-20200501053045-e0ff5e5a1de5 // indirect
 	golang.org/x/tools v0.0.0-20200219054238-753a1d49df85
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7
@@ -28,4 +29,5 @@ require (
 	gopkg.in/yaml.v2 v2.2.2 // indirect
 )
 
-replace github.com/revel/revel => github.com/runner-mei/revel v0.18.3
+// replace github.com/revel/revel => github.com/runner-mei/revel v0.18.3
+replace github.com/revel/revel => ../revel

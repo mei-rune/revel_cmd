@@ -4,14 +4,15 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
-	"fmt"
 	"errors"
+	"fmt"
 	"html/template"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
 	"golang.org/x/tools/go/packages"
 )
 
@@ -109,7 +110,7 @@ func GenerateTemplate(filename, templateSource string, args map[string]interface
 func RenderTemplate(destPath, srcPath string, data interface{}) (err error) {
 	tmpl, err := template.ParseFiles(srcPath)
 	if err != nil {
-		return NewBuildIfError(err, "Failed to parse template " + srcPath)
+		return NewBuildIfError(err, "Failed to parse template "+srcPath)
 	}
 
 	f, err := os.Create(destPath)
@@ -119,12 +120,12 @@ func RenderTemplate(destPath, srcPath string, data interface{}) (err error) {
 
 	err = tmpl.Execute(f, data)
 	if err != nil {
-		return NewBuildIfError(err, "Failed to Render template " + srcPath)
+		return NewBuildIfError(err, "Failed to Render template "+srcPath)
 	}
 
 	err = f.Close()
 	if err != nil {
-		return NewBuildIfError(err, "Failed to close file stream " + destPath)
+		return NewBuildIfError(err, "Failed to close file stream "+destPath)
 	}
 	return
 }
@@ -133,12 +134,12 @@ func RenderTemplate(destPath, srcPath string, data interface{}) (err error) {
 func RenderTemplateToStream(output io.Writer, srcPath []string, data interface{}) (err error) {
 	tmpl, err := template.ParseFiles(srcPath...)
 	if err != nil {
-		return NewBuildIfError(err, "Failed to parse template " + srcPath[0])
+		return NewBuildIfError(err, "Failed to parse template "+srcPath[0])
 	}
 
 	err = tmpl.Execute(output, data)
 	if err != nil {
-		return NewBuildIfError(err, "Failed to render template " + srcPath[0])
+		return NewBuildIfError(err, "Failed to render template "+srcPath[0])
 	}
 	return
 }
@@ -181,7 +182,7 @@ func CopyDir(destDir, srcDir string, data map[string]interface{}) error {
 		if info.IsDir() {
 			err := os.MkdirAll(filepath.Join(destDir, relSrcPath), 0777)
 			if !os.IsExist(err) {
-				return NewBuildIfError(err, "Failed to create directory", "path", destDir + "/" + relSrcPath)
+				return NewBuildIfError(err, "Failed to create directory", "path", destDir+"/"+relSrcPath)
 			}
 			return nil
 		}
@@ -189,7 +190,7 @@ func CopyDir(destDir, srcDir string, data map[string]interface{}) error {
 		// If this file ends in ".template", render it as a template.
 		if strings.HasSuffix(relSrcPath, ".template") {
 
-			return RenderTemplate(destPath[:len(destPath) - len(".template")], srcPath, data)
+			return RenderTemplate(destPath[:len(destPath)-len(".template")], srcPath, data)
 		}
 
 		// Else, just copy it over.
@@ -219,7 +220,7 @@ func fsWalk(fname string, linkName string, walkFn filepath.WalkFunc) error {
 
 		path = filepath.Join(linkName, name)
 
-		if err == nil && info.Mode() & os.ModeSymlink == os.ModeSymlink {
+		if err == nil && info.Mode()&os.ModeSymlink == os.ModeSymlink {
 			var symlinkPath string
 			symlinkPath, err = filepath.EvalSymlinks(path)
 			if err != nil {
@@ -349,12 +350,13 @@ var NO_APP_FOUND = errors.New("No app found")
 var NO_REVEL_FOUND = errors.New("No revel found")
 
 // Find the full source dir for the import path, uses the build.Default.GOPATH to search for the directory
-func findSrcPaths(appPath string, packagesList []string) (sourcePathsmap map[string]string, missingList[] string, err error) {
+func findSrcPaths(appPath string, packagesList []string) (sourcePathsmap map[string]string, missingList []string, err error) {
 	// Use packages to fetch
 	// by not specifying env, we will use the default env
 	config := &packages.Config{
 		Mode: packages.NeedName | packages.NeedFiles,
-		Dir:appPath,
+		Dir:  appPath,
+		Logf: Logger.Infof,
 	}
 	sourcePathsmap = map[string]string{}
 	Logger.Infof("Environment path %s root %s config env %s", os.Getenv("GOPATH"), os.Getenv("GOROOT"), config.Env)

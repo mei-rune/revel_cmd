@@ -16,11 +16,12 @@ import (
 
 	"github.com/jessevdk/go-flags"
 
+	"bytes"
+
 	"github.com/agtorre/gocolorize"
 	"github.com/revel/cmd/logger"
 	"github.com/revel/cmd/model"
 	"github.com/revel/cmd/utils"
-	"bytes"
 )
 
 const (
@@ -71,14 +72,14 @@ func main() {
 	wd, _ := os.Getwd()
 
 	utils.InitLogger(wd, logger.LvlError)
-	parser := flags.NewParser(c, flags.HelpFlag | flags.PassDoubleDash)
+	parser := flags.NewParser(c, flags.HelpFlag|flags.PassDoubleDash)
 	if len(os.Args) < 2 {
 		parser.WriteHelp(os.Stdout)
 		os.Exit(1)
 	}
 
 	if err := ParseArgs(c, parser, os.Args[1:]); err != nil {
-		fmt.Fprint(os.Stderr, err.Error() + "\n")
+		fmt.Fprint(os.Stderr, err.Error()+"\n")
 		os.Exit(1)
 	}
 
@@ -104,6 +105,7 @@ func main() {
 	println("Revel executing:", command.Short)
 
 	if err := command.RunWith(c); err != nil {
+		fmt.Println(command)
 		utils.Logger.Error("Unable to execute", "error", err)
 		os.Exit(1)
 	}
