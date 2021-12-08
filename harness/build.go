@@ -113,6 +113,9 @@ func Build(buildFlags ...string) (app *App, compileError *revel.Error) {
 	if goosEnv := os.Getenv("GOOS"); goosEnv != "" {
 		goos = goosEnv
 	}
+	if goosEnv := os.Getenv("REVEL_OS"); goosEnv != "" {
+		goos = goosEnv
+	}
 	if goos == "windows" {
 		binName += ".exe"
 	}
@@ -140,6 +143,11 @@ func Build(buildFlags ...string) (app *App, compileError *revel.Error) {
 		flags = append(flags, path.Join(revel.ImportPath, "app", "tmp"))
 
 		buildCmd := exec.Command(goPath, flags...)
+		if goos != runtime.GOOS {
+			buildCmd.Env = make([]string, len(os.Environ()))
+			copy(buildCmd.Env, os.Environ())
+			buildCmd.Env = append(buildCmd.Env, "GOOS="+goos)
+		}
 		revel.RevelLog.Debug("Exec:", "args", buildCmd.Args)
 		output, err := buildCmd.CombinedOutput()
 
@@ -290,7 +298,7 @@ func genSource(dir, filename, templateSource string, args map[string]interface{}
 	// Create the file
 	file, err := os.Create(filepath.Join(tmpPath, filename))
 	if err != nil {
-		revel.RevelLog.Fatalf("Failed to create file: %v", err)
+		revel.RevelLog.Fatalf("2Failed to create file: %v", err)
 	}
 	defer func() {
 		_ = file.Close()
