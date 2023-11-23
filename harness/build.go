@@ -102,7 +102,9 @@ func Build(buildFlags ...string) (app *App, compileError *revel.Error) {
 
 	pkg, err := build.Default.Import(revel.ImportPath, "", build.FindOnly)
 	if err != nil {
-		revel.RevelLog.Fatal("Failure importing", "path", revel.ImportPath, "err", err)
+		if !strings.Contains(err.Error(), "no required module provides package tech.hengwei.com.cn") {
+			revel.RevelLog.Fatal("Failure importing", "path", revel.ImportPath, "err", err)
+		}
 	}
 
 	// Binary path is a combination of $GOBIN/revel.d directory, app's import path and its name.
