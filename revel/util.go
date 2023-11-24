@@ -60,6 +60,20 @@ func mustRenderTemplate(destPath, srcPath string, data map[string]interface{}) {
 	panicOnError(err, "Failed to close "+f.Name())
 }
 
+func mustRenderTemplateText(destPath, templateSource string, data map[string]interface{}) {
+	tmpl, err := template.New("").Parse(templateSource)
+	panicOnError(err, "Failed to parse template")
+
+	f, err := os.Create(destPath)
+	panicOnError(err, "Failed to create "+destPath)
+
+	err = tmpl.Execute(f, data)
+	panicOnError(err, "Failed to render template")
+
+	err = f.Close()
+	panicOnError(err, "Failed to close "+f.Name())
+}
+
 func mustChmod(filename string, mode os.FileMode) {
 	err := os.Chmod(filename, mode)
 	panicOnError(err, fmt.Sprintf("Failed to chmod %d %q", mode, filename))

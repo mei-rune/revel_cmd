@@ -116,15 +116,27 @@ func buildApp(args []string) {
 		"Mode":       mode,
 	}, filepath.Join(destPath, "run.sh")
 
-	mustRenderTemplate(
+	mustRenderTemplateText(
 		runShPath,
-		filepath.Join(revel.RevelPath, "..", "cmd", "revel", "package_run.sh.template"),
+		PACKAGE_RUN_SH,
 		tmplData)
 
 	mustChmod(runShPath, 0755)
 
-	mustRenderTemplate(
+	mustRenderTemplateText(
 		filepath.Join(destPath, "run.bat"),
-		filepath.Join(revel.RevelPath, "..", "cmd", "revel", "package_run.bat.template"),
+		PACKAGE_RUN_BAT,
 		tmplData)
 }
+
+
+const PACKAGE_RUN_SH = `#!/bin/sh
+
+SCRIPTPATH=$(cd "$(dirname "$0")"; pwd)
+"$SCRIPTPATH/{{.BinName}}" -importPath {{.ImportPath}} -srcPath "$SCRIPTPATH/src" -runMode {{.Mode}}
+`
+
+const PACKAGE_RUN_BAT = `@echo off
+
+{{.BinName}} -importPath {{.ImportPath}} -srcPath "%CD%\src" -runMode {{.Mode}}
+`
