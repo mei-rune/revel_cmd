@@ -102,7 +102,9 @@ func Build(buildFlags ...string) (app *App, compileError *revel.Error) {
 
 	pkg, err := build.Default.Import(revel.ImportPath, "", build.FindOnly)
 	if err != nil {
-		revel.RevelLog.Fatal("Failure importing", "path", revel.ImportPath)
+		if !strings.Contains(err.Error(), "no required module provides package tech.hengwei.com.cn") {
+			revel.RevelLog.Fatal("Failure importing", "path", revel.ImportPath, "err", err)
+		}
 	}
 
 	// Binary path is a combination of $GOBIN/revel.d directory, app's import path and its name.
@@ -148,7 +150,7 @@ func Build(buildFlags ...string) (app *App, compileError *revel.Error) {
 			copy(buildCmd.Env, os.Environ())
 			buildCmd.Env = append(buildCmd.Env, "GOOS="+goos)
 		}
-		revel.RevelLog.Debug("Exec:", "args", buildCmd.Args)
+		revel.RevelLog.Info("Exec:", "args", buildCmd.Args)
 		output, err := buildCmd.CombinedOutput()
 
 		// If the build succeeded, we're done.
@@ -187,7 +189,7 @@ func Build(buildFlags ...string) (app *App, compileError *revel.Error) {
 			} else {
 				getCmd = exec.Command(goPath, "get", pkgName)
 			}
-			revel.RevelLog.Debug("Exec:", "args", getCmd.Args)
+			revel.RevelLog.Info("Exec:", "args", getCmd.Args)
 			getOutput, err := getCmd.CombinedOutput()
 			if err != nil {
 				revel.RevelLog.Error(string(getOutput))
