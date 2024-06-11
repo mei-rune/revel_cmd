@@ -207,9 +207,10 @@ func Build(buildFlags ...string) (app *App, compileError *revel.Error) {
 
 // Try to define a version string for the compiled app
 // The following is tried (first match returns):
-// - Read a version explicitly specified in the APP_VERSION environment
-//   variable
-// - Read the output of "git describe" if the source is in a git repository
+//   - Read a version explicitly specified in the APP_VERSION environment
+//     variable
+//   - Read the output of "git describe" if the source is in a git repository
+//
 // If no version can be determined, an empty string is returned.
 func getAppVersion() string {
 	if version := os.Getenv("APP_VERSION"); version != "" {
@@ -431,6 +432,7 @@ package main
 
 import (
 	"flag"
+	"runtime/debug"
 	"reflect"
 	"github.com/revel/revel"{{range $k, $v := $.ImportPaths}}
 	{{$v}} "{{$k}}"{{end}}
@@ -448,6 +450,8 @@ var (
 )
 
 func main() {
+	debug.SetTraceback("all")
+	
 	flag.Parse()
 	revel.Init(*runMode, *importPath, *srcPath)
 	revel.AppLog.Info("Running revel server")
